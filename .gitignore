@@ -7,4 +7,6 @@ Thumbs.db
 *.log
 .cursor/
 .cursorignore
+.claude/
+.claudeignore
 *.md
