@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="description" content="Interactive analytics cockpit for the optics & photography market: CIPA worldwide camera shipments, Poisson/Negative-Binomial price elasticity, discrete-choice segmentation, brand equity, and a Monte Carlo what-if simulator.">
+<meta name="description" content="Optics and photography market mockup: industry shipment totals, prices, brands, and a what-if slider. Synthetic modeled scores throughout.">
 <meta property="og:title" content="Optics Market Cockpit">
-<meta property="og:description" content="A quantitative pricing & brand-equity analytics framework for optics & photography, driven by CIPA shipment statistics plus a synthetic methodology panel.">
+<meta property="og:description" content="A synthetic mockup of a pricing and brand dashboard for optics and photography. Shipment totals use published industry statistics; modeled scores are demo data.">
 <meta property="og:type" content="website">
 <title>Optics Market Cockpit</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -165,6 +165,8 @@ footer.methodology{border-top:1px solid var(--border); margin-top:50px; padding:
 footer.methodology .wrap{font-size:12px; color:var(--text-secondary); line-height:1.7;}
 footer.methodology h4{font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); margin:0 0 8px;}
 footer.methodology ul{margin:0; padding-left:18px;}
+.mockup-banner{background:var(--accent-wash); color:var(--text-secondary); font-size:12.5px; text-align:center; padding:9px 18px; border-bottom:1px solid var(--border); line-height:1.45;}
+.mockup-banner b{color:var(--text-primary); font-weight:700;}
 </style>
 
 </head>
@@ -176,7 +178,7 @@ footer.methodology ul{margin:0; padding-left:18px;}
       <div class="brand-mark" aria-hidden="true"></div>
       <div class="brand-text">
         <div class="name">Optics &amp; Photography Market Cockpit</div>
-        <div class="tag">CIPA shipments · quantitative pricing &amp; brand framework</div>
+        <div class="tag">Synthetic mockup · industry shipment totals</div>
       </div>
     </div>
     <div style="display:flex; align-items:center; gap:14px;">
@@ -184,6 +186,7 @@ footer.methodology ul{margin:0; padding-left:18px;}
       <button class="theme-btn" id="theme-toggle" type="button">Theme</button>
     </div>
   </div>
+  <div class="mockup-banner"><b>Synthetic mockup.</b> Shipment totals use published industry statistics. Prices, brands, buyer groups, and every modeled score are demo data — not real company facts.</div>
   <div class="kpi-strip" id="kpi-strip"></div>
   <div class="tabbar" id="tabbar"></div>
 </div>
@@ -202,7 +205,7 @@ footer.methodology ul{margin:0; padding-left:18px;}
 
 <footer class="methodology">
   <div class="wrap">
-    <h4>Methodology &amp; caveats</h4>
+    <h4>How this mockup was built</h4>
     <ul id="methodology-list"></ul>
   </div>
 </footer>
@@ -460,9 +463,17 @@ function heatmapTable(container, rowLabels, colLabels, matrix, opts={}){
 }
 
 function statusPill(status){
+  const label = {Pass:'Pass', Warn:'Caution', Fail:'Fail'}[status] || status;
   const map = {Pass:'good', Warn:'warning', Fail:'critical'};
   const cls = map[status]||'warning';
-  return `<span class="pill ${cls}">${status}</span>`;
+  return `<span class="pill ${cls}">${label}</span>`;
+}
+function plainCopy(s){
+  return String(s)
+    .replace(/own-price elasticity/gi, 'price sensitivity')
+    .replace(/cross-price elasticity/gi, 'rival-price effect')
+    .replace(/Latent-Class MNL/gi, 'buyer types')
+    .replace(/\bNash\b/g, 'stable');
 }
 </script>
 <script>
@@ -471,28 +482,28 @@ function statusPill(status){
    ============================================================ */
 const TABS = [
   {id:'overview', label:'Overview'},
-  {id:'brand', label:'Brand Equity', featured:true},
-  {id:'elasticity', label:'Pricing & Elasticity'},
-  {id:'choice', label:'Choice & Segmentation'},
-  {id:'plc', label:'Life Cycle'},
+  {id:'brand', label:'Brands', featured:true},
+  {id:'elasticity', label:'Pricing'},
+  {id:'choice', label:'Buyers'},
+  {id:'plc', label:'Life cycle'},
   {id:'competitor', label:'Competitors'},
   {id:'touchpoints', label:'How people find you'},
-  {id:'simulator', label:'What-If Simulator'},
-  {id:'insights', label:'Insight Constellation'},
+  {id:'simulator', label:'What-if'},
+  {id:'insights', label:'Priorities'},
 ];
 
 function buildChrome(){
   const D = DASHBOARD_DATA;
   document.getElementById('header-meta').innerHTML =
-    `${D.cipa ? 'CIPA shipments' : 'Data'} through <b>${D.kpis.latest_month}</b><br>Generated ${new Date(D.generated_at).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'})}`;
+    `Industry shipments through <b>${D.kpis.latest_month}</b><br>Mockup generated ${new Date(D.generated_at).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'})}`;
   const brandLead = D.brand_equity.brand_table.slice().sort((a,b)=>b.brand_value_usd_m-a.brand_value_usd_m)[0];
   const kpis = [
-    {lbl:'SKUs tracked', val:fmt.int(D.kpis.n_products), sub:`${D.kpis.n_brands} brands · ${D.kpis.n_categories} categories`},
-    {lbl:'Trailing 12mo revenue', val:fmt.usd0(D.kpis.trailing_12mo_revenue_usd), sub:`${fmt.int(D.kpis.trailing_12mo_units)} units (CIPA worldwide)`},
-    {lbl:'Brand equity leader', val:brandLead.brand, sub:`Strength ${brandLead.brand_strength_score_0_100}/100 · $${Math.round(brandLead.brand_value_usd_m)}M modeled`, tab:'brand'},
-    {lbl:'QC pass rate', val:(D.kpis.qc_pass_rate*100).toFixed(0)+'%', sub:`${(D.kpis.qc_warn_rate*100).toFixed(0)}% warn · ${(D.kpis.qc_fail_rate*100).toFixed(0)}% fail`},
-    {lbl:'Top priority insight', val:D.kpis.top_insight_id, sub:D.kpis.top_insight.slice(0,34)+(D.kpis.top_insight.length>34?'…':'')},
-    {lbl:'Selected choice model', val:D.discrete_choice.selected_model.split(' ')[0], sub:'lowest BIC vs MNL'},
+    {lbl:'Products tracked', val:fmt.int(D.kpis.n_products), sub:`${D.kpis.n_brands} brands · ${D.kpis.n_categories} categories`},
+    {lbl:'Last 12 months', val:fmt.usd0(D.kpis.trailing_12mo_revenue_usd), sub:`${fmt.int(D.kpis.trailing_12mo_units)} units shipped`},
+    {lbl:'Brand leader', val:brandLead.brand, sub:`Strength ${brandLead.brand_strength_score_0_100}/100 · $${Math.round(brandLead.brand_value_usd_m)}M modeled`, tab:'brand'},
+    {lbl:'Checks passed', val:(D.kpis.qc_pass_rate*100).toFixed(0)+'%', sub:`${(D.kpis.qc_warn_rate*100).toFixed(0)}% caution · ${(D.kpis.qc_fail_rate*100).toFixed(0)}% fail`},
+    {lbl:'Top priority', val:D.kpis.top_insight.split(':')[0], sub:'Highest-ranked action on Priorities'},
+    {lbl:'Buyer groups', val:'3 groups', sub:'Best-fitting buyer model in this mockup'},
   ];
   const strip = document.getElementById('kpi-strip');
   kpis.forEach(k=>{
@@ -501,7 +512,7 @@ function buildChrome(){
     htmlEl('div','val',c).textContent=k.val;
     htmlEl('div','sub',c).textContent=k.sub;
     if(k.tab){
-      c.title = 'Open Brand Equity';
+      c.title = 'Open Brands';
       c.addEventListener('click', ()=>selectTab(k.tab));
     }
   });
@@ -512,15 +523,11 @@ function buildChrome(){
     b.addEventListener('click', ()=>selectTab(t.id));
   });
   const methods = [
-    "Worldwide camera shipments (units and yen value) are CIPA monthly member-company statistics (https://cipa.jp/e/stats/dc.html), converted to USD at documented yearly USDJPY averages — not official CIPA FX. Compact / DSLR / Full-Frame / APS-C What-if and Nash baselines use trailing-12-month CIPA volume and ASP. Brand equity, discrete choice, PLC, sentiment, and unmapped categories remain synthetic.",
-    "Price elasticity: log-log Poisson GLM (own-price coefficient = constant elasticity); Negative Binomial re-estimated wherever the Pearson dispersion test flags overdispersion.",
-    "Nash price points: local differentiated Bertrand best-response. Residual demand is linearized at today’s (price, volume) using the NegBin own-price elasticity, with rivals held fixed. Compact / DSLR / Full-Frame / APS-C use CIPA trailing-12-month ASP and volume; other categories stay on the synthetic panel. Full-Frame / APS-C / DSLR also solved as a 3-player linear-demand Nash using the Nested-Logit cross-elasticity matrix. Cost is an assumed share of current average selling price (default 58%), not observed COGS. Categories with |ε| ≤ 1 are flagged: the local best-response still says “raise,” but there is no global isoelastic Nash.",
-    "Discrete choice: MNL rejected by a Hausman-McFadden IIA test; Nested Logit and a 3-class Latent-Class MNL estimated as corrections; model selected by lowest BIC.",
-    "Product life cycle: Bass diffusion re-fit to observed sales via nonlinear least squares; stage recovery validated against the simulation's ground truth.",
-    "Brand equity index: PCA-derived weights (not assumed equal weights) over awareness/consideration/loyalty/quality/NPS/ESG/digital-engagement.",
-    "Gut-feel vs careful talk: seeded synthetic reviews scored for snap-feeling language (look, wow, just works) versus careful-reasoning language (specs, comparisons, trade-offs). Sentiment is split by which kind of language carries it — not a single thumbs-up score.",
-    "Insight prioritization: Type-1/Interval-Type-2 fuzzy Mamdani inference + interval type-2 fuzzy TOPSIS (Chen 2000 vertex method) -- simplified, documented type-reduction (lower/upper Mamdani runs averaged), not full Karnik-Mendel.",
-    "Every insight carries a 7-check quality matrix (significance, sample size, overdispersion handling, cross-model robustness, plausibility, recency, stability) -- read it before acting on any single number.",
+    "This is a synthetic mockup. Do not treat modeled scores as facts about any real company.",
+    "Shipment units and value are published industry statistics (CIPA member companies), converted to dollars at yearly yen rates. Compact, DSLR, Full-Frame, and APS-C what-if volumes use that last-12-month mix.",
+    "Price sensitivity, buyer groups, life-cycle stages, brand scores, competitor risk, and priorities are seeded demo estimates so the screens have numbers to work with.",
+    "Stable prices assume rivals stay put and that cost is a share of today’s selling price (default 58%) — not factory cost.",
+    "People’s reviews in this mockup are seeded text, split into snap first-impressions versus careful spec talk.",
   ];
   const ul = document.getElementById('methodology-list');
   methods.forEach(m=>{ htmlEl('li',null,ul).textContent = m; });
@@ -593,11 +600,11 @@ function nashIsoelastic(p0, e, costRatio){
   const lernerNow = (p0-c)/p0;
   if(!(e < 0)){
     return {ok:false, c, pNash:null, lernerNow, lernerNash:null, gapPct:null, inelastic:true,
-      reason: 'Own-price elasticity is not negative — no Bertrand best-response.'};
+      reason: 'Price sensitivity is not negative — no stable price.'};
   }
   const pNash = (-p0/e + p0 + c) / 2;
   if(!(pNash>0)) return {ok:false, c, pNash:null, lernerNow, lernerNash:null, gapPct:null, inelastic:e>=-1,
-    reason:'Nash price not positive at this cost.'};
+    reason:'Stable price is not positive at this cost.'};
   return {ok:true, c, pNash, lernerNow, lernerNash: (pNash-c)/pNash, gapPct: 100*(pNash/p0 - 1), inelastic: e>=-1};
 }
 
@@ -656,11 +663,11 @@ function grid(container, cls){ return htmlEl('div','grid '+(cls||'grid-2'), cont
 function renderOverview(panel){
   panel.innerHTML = '';
   sectionHead(panel, 'Mission control',
-    'Brand equity sits at the front of this cockpit: who holds modeled brand value, how the money moves, how confident the model is, and what to act on first. Shipment totals are CIPA member-company worldwide figures; elasticity, brand scores, and the rest of the methodology panel stay synthetic.');
+    'Who holds modeled brand value, how the money moves, how confident the mockup is, and what to act on first. Shipment totals are published industry figures. Everything else on this screen is synthetic demo data.');
   const g = grid(panel);
 
   const brandsByValue = D.brand_equity.brand_table.slice().sort((a,b)=>b.brand_value_usd_m-a.brand_value_usd_m);
-  const cBrand = card(g, 'Brand equity at a glance', 'Modeled Interbrand-style brand value ($M). Click the card to open the full Brand Equity tab.');
+  const cBrand = card(g, 'Brands at a glance', 'Modeled brand value ($M). Click to open the Brands tab.');
   cBrand.classList.add('card-span2','jump');
   cBrand.addEventListener('click', ()=>selectTab('brand'));
   hBarChart(htmlEl('div',null,cBrand), brandsByValue.slice(0,8).map((b,i)=>({
@@ -668,28 +675,28 @@ function renderOverview(panel){
     valueLabel:'$'+Math.round(b.brand_value_usd_m)+'M',
     tip:`${b.brand}<br>Value $${Math.round(b.brand_value_usd_m)}M · Strength ${b.brand_strength_score_0_100}/100`,
   })), {labelW:140, rowH:22, ramp:true});
-  const hint = htmlEl('div','jump-hint',cBrand); hint.textContent = 'Open Brand Equity →';
+  const hint = htmlEl('div','jump-hint',cBrand); hint.textContent = 'Open Brands →';
 
-  const c1 = card(g, 'CIPA worldwide shipment value',
-    D.cipa ? `${D.cipa.source}. ${D.cipa.n_months} months (${D.cipa.first_month}–${D.cipa.latest_month}). Member companies only, including overseas production.` : 'Monthly shipment value.');
+  const c1 = card(g, 'Industry shipment value',
+    D.cipa ? `${D.cipa.n_months} months of published member-company shipments (${D.cipa.first_month}–${D.cipa.latest_month}). Not a complete global census.` : 'Monthly shipment value.');
   c1.classList.add('card-span2');
   const chart1 = htmlEl('div',null,c1);
   lineChart(chart1, [{name:'Shipment value (USD)', values:D.monthly_trend.map(m=>m.revenue)}], D.monthly_trend.map(m=>m.month), {area:true, h:220});
 
   if(D.cipa && D.cipa.trailing_12mo){
-    const cMix = card(g, 'Trailing 12 months by type', 'CIPA built-in-lens vs SLR vs mirrorless. Full-Frame / APS-C What-if volumes split ILC sensor-size rows by the mirrorless share of ILC.');
+    const cMix = card(g, 'Last 12 months by type', 'Compact vs SLR vs mirrorless. Full-Frame / APS-C what-if volumes split interchangeable-lens shipments by sensor size.');
     hBarChart(htmlEl('div',null,cMix), D.cipa.trailing_12mo.by_type.map(r=>({
       label: r.type.replace(' (built-in lens)',''),
       value: r.units,
       valueLabel: fmt.int(r.units),
-      tip: `${r.type}<br>${fmt.int(r.units)} units · ${fmt.usd0(r.usd)} · ASP ${fmt.usd0(r.asp_usd)}`,
+      tip: `${r.type}<br>${fmt.int(r.units)} units · ${fmt.usd0(r.usd)} · typical price ${fmt.usd0(r.asp_usd)}`,
     })), {labelW:110, rowH:28, ramp:true});
     const mixNote = htmlEl('div','jump-hint',cMix);
     mixNote.style.color = 'var(--text-muted)';
-    mixNote.textContent = 'Latest month '+D.cipa.latest_month+' · source cipa.jp';
+    mixNote.textContent = 'Latest month '+D.cipa.latest_month+' · published industry stats';
   }
 
-  const c2 = card(g, 'Quality-check outcome', 'Share of the 19 registered insights clearing every methodological check.');
+  const c2 = card(g, 'How solid the findings look', 'Share of the 19 listed actions that clear every quality check in this mockup.');
   const donutWrap = htmlEl('div',null,c2);
   donutWrap.style.cssText='display:flex; align-items:center; gap:18px;';
   const svg = el('svg',{width:120,height:120,viewBox:'0 0 120 120'});
@@ -714,25 +721,25 @@ function renderOverview(panel){
     row.innerHTML = `<span class="pill ${cls}"></span> ${l} · ${(v*100).toFixed(0)}%`;
   });
 
-  const c3 = card(g, 'Top 5 priorities (fuzzy TOPSIS)', 'Ranked by interval type-2 fuzzy closeness coefficient -- see the Insight Constellation tab for the full picture.');
+  const c3 = card(g, 'Top 5 priorities', 'Ranked actions from the Priorities tab. Scores are mockup rankings, not a live decision engine.');
   c3.classList.add('card-span2');
   D.fuzzy_prioritization.insights.slice(0,5).forEach(ins=>{
     const row = htmlEl('div','insight-row',c3);
     row.style.gridTemplateColumns = '34px 1fr 120px';
     htmlEl('div','rank-badge',row).textContent = '#'+ins.overall_rank;
     const mid = htmlEl('div',null,row);
-    htmlEl('div','insight-title',mid).textContent = ins.title;
-    htmlEl('div','insight-meta',mid).textContent = `${ins.module} · ${ins.fuzzy_priority_label} priority`.replace('·','·');
+    htmlEl('div','insight-title',mid).textContent = plainCopy(ins.title);
+    htmlEl('div','insight-meta',mid).textContent = `${ins.module} · ${ins.fuzzy_priority_label} priority`.replace('Pricing / Elasticity','Pricing').replace('Discrete Choice','Buyers').replace('Brand Equity','Brands').replace('Product Life Cycle','Life cycle').replace('Competitor Intelligence','Competitors').replace('Segmentation','Buyer groups');
     const right = htmlEl('div',null,row); right.style.textAlign='right';
-    right.innerHTML = `<span class="mono" style="font-weight:600;">${ins.topsis_closeness_mid.toFixed(3)}</span><div style="font-size:10.5px;color:var(--text-muted);">closeness coef.</div>`;
+    right.innerHTML = `<span class="mono" style="font-weight:600;">${ins.topsis_closeness_mid.toFixed(3)}</span><div style="font-size:10.5px;color:var(--text-muted);">priority score</div>`;
   });
 
   const c4 = card(g, 'Present-day read', 'Where this market differs from a 2015-style camera-industry report.');
   const notes = [
-    "CIPA compact (built-in lens) shipments are the 2025–26 exception to the long smartphone squeeze — trailing-12-month compact is about 2.6M units. ILC mix is still mirrorless-led.",
-    "The Sep 3, 2026 US drone-tariff escalation (+25% general / +100% enterprise) hits China-origin DJI & Insta360 right after this data window -- a real near-term repricing decision.",
+    "Compact cameras are the 2025–26 exception to the long smartphone squeeze — last-12-month compact shipments are about 2.6M units. Interchangeable-lens mix is still mirrorless-led.",
+    "The Sep 3, 2026 US drone-tariff escalation (+25% general / +100% enterprise) hits China-origin DJI & Insta360 right after this data window — a real near-term repricing decision.",
     "AR smart glasses (Meta) reframes the category itself: wearable always-on capture, not a camera line-item.",
-    "Brand insulation from price sensitivity is asserted often in classic brand-equity work; this run finds it statistically inconclusive at N=12 reliable brands -- flagged, not hidden.",
+    "Strong brands are often said to shrug off price cuts; this mockup does not confirm that at the sample it has — flagged, not hidden.",
   ];
   notes.forEach(n=>{ const p = htmlEl('p',null,c4); p.style.cssText='font-size:12.5px;color:var(--text-secondary);margin:0 0 10px;'; p.textContent = n; });
 }
@@ -742,49 +749,51 @@ function renderOverview(panel){
    ========================================================= */
 function renderElasticity(panel){
   panel.innerHTML='';
-  sectionHead(panel,'Pricing & elasticity',
-    'Log-log Poisson GLM elasticity per category, corrected for overdispersion with a Negative Binomial where the dispersion test demands it, plus how elasticity shifts across the product life cycle. Compact / DSLR / Full-Frame / APS-C volumes and ASPs on this tab’s Nash block are CIPA trailing-12-month shipments; the elasticities themselves are still the synthetic-panel estimates.');
+  sectionHead(panel,'Pricing',
+    'How much volume moves when price moves, by category and by life-cycle stage. Compact / DSLR / Full-Frame / APS-C volumes on the stable-price block use published last-12-month shipments; the sensitivity numbers themselves are synthetic mockup estimates.');
   const g = grid(panel);
 
-  const c1 = card(g,'Own-price elasticity by category (Negative Binomial, 95% CI)','Whiskers = Poisson 95% CI, shown for reference; the plotted value is the NegBin-corrected estimate used for pricing.');
+  const c1 = card(g,'How price-sensitive each category is','Bars show estimated volume change for a price change. Whiskers are a confidence range. Orange = noisier sales, so an adjusted estimate is used.');
   c1.classList.add('card-span2');
   const items = D.elasticity.by_category
     .slice().sort((a,b)=>a.negbin_elasticity-b.negbin_elasticity)
     .map(r=>({label:r.category, value:r.negbin_elasticity, lo:r.poisson_ci_95[0], hi:r.poisson_ci_95[1],
       color: r.overdispersed? cssVar('--s2') : cssVar('--s1'),
       valueLabel: r.negbin_elasticity.toFixed(2),
-      tip:`NegBin: ${r.negbin_elasticity} · Poisson: ${r.poisson_elasticity}<br>Dispersion ${r.dispersion_ratio}x · ${r.recommended_model}`}));
+      tip:`${r.category}<br>Sensitivity ${r.negbin_elasticity}<br>${r.overdispersed?'Adjusted for noisy sales':'Simple count fit'}`}));
   const chartWrap = htmlEl('div',null,c1);
   hBarChart(chartWrap, items, {zeroCentered:true, labelW:190, rowH:24});
-  renderLegend(c1,[{label:'Overdispersed -> NegBin used',color:cssVar('--s2')},{label:'Poisson adequate',color:cssVar('--s1')}]);
+  renderLegend(c1,[{label:'Noisy sales — adjusted',color:cssVar('--s2')},{label:'Simple count fit',color:cssVar('--s1')}]);
 
-  const c2 = card(g,'Elasticity across the product life cycle','Pooled interaction model: log_price × PLC-stage dummy.');
+  const c2 = card(g,'Sensitivity across the product life cycle','Price sensitivity usually rises as a product ages and substitutes pile up.');
   const plcChart = htmlEl('div',null,c2);
   const stages = ['Introduction','Growth','Maturity','Decline'];
-  vBarChart(plcChart, stages.map(s=>({label:s, values:[Math.abs(D.elasticity.plc_interaction.stage_elasticity[s])]})), ['|Elasticity|'], {h:200, max:Math.max(...Object.values(D.elasticity.plc_interaction.stage_elasticity).map(Math.abs))*1.2, valueFmt:v=>v.toFixed(2)});
-  const p = htmlEl('p',null,c2); p.style.cssText='font-size:12px;color:var(--text-secondary);margin-top:10px;'; p.textContent = D.elasticity.plc_interaction.interpretation;
+  vBarChart(plcChart, stages.map(s=>({label:s, values:[Math.abs(D.elasticity.plc_interaction.stage_elasticity[s])]})), ['Sensitivity'], {h:200, max:Math.max(...Object.values(D.elasticity.plc_interaction.stage_elasticity).map(Math.abs))*1.2, valueFmt:v=>v.toFixed(2)});
+  const p = htmlEl('p',null,c2); p.style.cssText='font-size:12px;color:var(--text-secondary);margin-top:10px;';
+  p.textContent = 'Sensitivity typically rises from Introduction to Decline as products become easier to swap.';
 
-  const c3 = card(g,'Model diagnostics','Dispersion ratio > 1.5 flags Poisson as insufficient (Pearson chi2/df).');
+  const c3 = card(g,'Fit quality','How well the mockup’s price-volume fit behaved in each category.');
   const wrap = htmlEl('div','tbl-wrap',c3);
   const t = htmlEl('table','data',wrap);
-  t.innerHTML = `<thead><tr><th>Category</th><th>N</th><th>Dispersion</th><th>Model used</th><th>Pseudo-R²</th></tr></thead>`;
+  t.innerHTML = `<thead><tr><th>Category</th><th>N</th><th>Noise</th><th>Fit used</th><th>Fit score</th></tr></thead>`;
   const tb = htmlEl('tbody',null,t);
   D.elasticity.by_category.forEach(r=>{
     const tr = htmlEl('tr',null,tb);
+    const used = r.recommended_model==='Negative Binomial' ? 'Adjusted' : 'Simple';
     tr.innerHTML = `<td>${r.category}</td><td class="num">${r.n_obs}</td><td class="num">${r.dispersion_ratio}×</td>
-      <td>${r.recommended_model==='Negative Binomial'?statusPill('Warn'):statusPill('Pass')} ${r.recommended_model}</td>
+      <td>${r.recommended_model==='Negative Binomial'?statusPill('Warn'):statusPill('Pass')} ${used}</td>
       <td class="num">${r.pseudo_r2}</td>`;
   });
 
-  const c5 = card(g,'Cross-price elasticity (proxy)','Coefficient on competitor log-price within each category regression; positive = substitutes.');
+  const c5 = card(g,'When a rival cuts price','Positive = people switch toward the cheaper rival. Mockup estimates.');
   c5.classList.add('card-span2');
   const items2 = D.elasticity.by_category.slice().sort((a,b)=>b.cross_price_elasticity_proxy-a.cross_price_elasticity_proxy)
     .map(r=>({label:r.category, value:r.cross_price_elasticity_proxy, color:r.cross_price_elasticity_proxy>0?cssVar('--s3'):cssVar('--s7'),
       valueLabel:r.cross_price_elasticity_proxy.toFixed(3)}));
   hBarChart(htmlEl('div',null,c5), items2, {zeroCentered:true, labelW:190, rowH:22});
 
-  const nashCard = card(panel,'Nash price points',
-    'The local best-response price: where this category would not want to move first if everyone else stays put. Residual demand is linearized at today’s price and volume using the NegBin own-price elasticity. Compact / DSLR / Full-Frame / APS-C “today” prices are CIPA trailing-12-month ASPs; other categories stay on the synthetic panel. Cost is an assumed share of today’s ASP — not factory COGS. |ε| ≤ 1 is flagged (no global isoelastic Nash).');
+  const nashCard = card(panel,'Stable prices (if rivals stay put)',
+    'The price this category would not want to move first, holding everyone else still. Compact / DSLR / Full-Frame / APS-C “today” prices use published last-12-month typical selling prices; other categories stay on the synthetic panel. Cost is an assumed share of today’s price — not factory cost. Weak price sensitivity is flagged: treat as “raise,” not a hard target.');
   nashCard.classList.add('card-span2');
   const nashControls = htmlEl('div','sim-controls',nashCard);
   const nf = htmlEl('div','sim-field',nashControls);
@@ -803,18 +812,18 @@ function renderElasticity(panel){
     nashChart.innerHTML='';
     if(ok.length){
       vBarChart(nashChart, ok.map(r=>({label:r.category.replace('Binoculars & Spotting Scopes','Binoculars').replace('Compact / Point-and-Shoot','Compact').replace('Interchangeable Lenses','Lenses'), values:[r.pNow, r.pNash]})),
-        ['Today’s price','Nash price'], {h:240, valueFmt:v=>'$'+Math.round(v).toLocaleString('en-US')});
+        ['Today’s price','Stable price'], {h:240, valueFmt:v=>'$'+Math.round(v).toLocaleString('en-US')});
     }
     nashWrap.innerHTML='';
     const tN = htmlEl('table','data',nashWrap);
-    tN.innerHTML='<thead><tr><th>Category</th><th>Own ε</th><th>Today’s price</th><th>Nash price</th><th>Move</th><th>Status</th></tr></thead>';
+    tN.innerHTML='<thead><tr><th>Category</th><th>Sensitivity</th><th>Today’s price</th><th>Stable price</th><th>Move</th><th>Status</th></tr></thead>';
     const tbN = htmlEl('tbody',null,tN);
     rows.forEach(r=>{
       const tr = htmlEl('tr',null,tbN);
       const move = r.ok ? ((r.gapPct>=0?'+':'')+r.gapPct.toFixed(0)+'%') : '—';
-      const st = !r.ok ? statusPill('Warn')+' no Nash'
-        : r.inelastic ? statusPill('Warn')+' inelastic — raise, don’t treat as a target'
-        : (Math.abs(r.gapPct)<8 ? statusPill('Pass')+' near Nash' : (r.gapPct>0 ? 'below Nash' : 'above Nash'));
+      const st = !r.ok ? statusPill('Warn')+' no stable price'
+        : r.inelastic ? statusPill('Warn')+' weak sensitivity — raise, don’t treat as a target'
+        : (Math.abs(r.gapPct)<8 ? statusPill('Pass')+' near stable' : (r.gapPct>0 ? 'below stable' : 'above stable'));
       tr.innerHTML = `<td>${r.category}</td><td class="num">${r.e.toFixed(2)}</td><td class="num">$${Math.round(r.pNow).toLocaleString('en-US')}</td>
         <td class="num">${r.ok?'$'+Math.round(r.pNash).toLocaleString('en-US'):'—'}</td><td class="num">${move}</td><td>${st}</td>`;
     });
@@ -822,9 +831,9 @@ function renderElasticity(panel){
     if(trio){
       const note = htmlEl('p','card-note',nashWrap);
       note.style.marginTop='14px';
-      note.textContent = 'Three-player Nash (Full-Frame, APS-C, DSLR) — linear demand, Nested-Logit cross-elasticities, same cost share. Prices move together; this is not the unilateral Lerner point above.';
+      note.textContent = 'Three-way stable prices (Full-Frame, APS-C, DSLR) — all three move together. Not the same as the one-at-a-time prices above.';
       const t3 = htmlEl('table','data',nashWrap);
-      t3.innerHTML='<thead><tr><th>Category</th><th>Today’s price</th><th>3-player Nash</th><th>Move</th></tr></thead>';
+      t3.innerHTML='<thead><tr><th>Category</th><th>Today’s price</th><th>Three-way stable</th><th>Move</th></tr></thead>';
       const tb3 = htmlEl('tbody',null,t3);
       trio.forEach(r=>{
         const tr = htmlEl('tr',null,tb3);
@@ -843,28 +852,29 @@ function renderElasticity(panel){
    ========================================================= */
 function renderChoice(panel){
   panel.innerHTML='';
-  sectionHead(panel,'Discrete choice & product segmentation',
-    'Identifying the right functional form: MNL is tested against the IIA assumption; when it fails, Nested Logit and a Latent-Class MNL correct for it. Clustering then finds data-driven product groups independent of category labels.');
+  sectionHead(panel,'Buyers and product groups',
+    'Which story of the buyer fits this mockup, then which product groups appear in the data. All of this is synthetic demo estimation.');
   const g = grid(panel);
 
-  const c1 = card(g,'Model comparison (lower BIC = better fit)', `Selected: ${D.discrete_choice.selected_model}`);
+  const c1 = card(g,'Which buyer story fits best', `Selected: buyer types (3 groups). Lower score = better fit in this mockup.`);
   const mc = htmlEl('div',null,c1);
-  const modelLabelMap = {'Multinomial Logit (MNL)':'MNL','Nested Logit':'Nested Logit','Latent-Class MNL (3-class)':'Latent-Class'};
-  vBarChart(mc, D.discrete_choice.model_comparison.map(m=>({label:modelLabelMap[m.model]||m.model, values:[m.bic]})), ['BIC'], {h:210});
+  const modelLabelMap = {'Multinomial Logit (MNL)':'One-size-fits-all','Nested Logit':'By camera type','Latent-Class MNL (3-class)':'By buyer type'};
+  vBarChart(mc, D.discrete_choice.model_comparison.map(m=>({label:modelLabelMap[m.model]||m.model, values:[m.bic]})), ['Fit score'], {h:210});
 
-  const c2 = card(g,'Hausman-McFadden IIA test','Dropping the DSLR nest and re-fitting MNL should NOT change coefficients if IIA holds.');
+  const c2 = card(g,'Do buyers treat options as independent?','If dropping DSLRs changes the other preferences, a one-size-fits-all buyer story is too simple.');
   const h = D.discrete_choice.hausman_iia_test;
   const badge = htmlEl('div',null,c2);
   badge.innerHTML = `<div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;">
-      ${h.iia_rejected? '<span class="pill critical">IIA rejected</span>' : '<span class="pill good">IIA holds</span>'}
-      <span class="mono" style="font-size:12.5px;color:var(--text-secondary);">χ²=${h.hausman_statistic}, p=${h.p_value}</span></div>`;
-  const p2 = htmlEl('p',null,c2); p2.style.cssText='font-size:12px;color:var(--text-secondary);'; p2.textContent = h.interpretation;
+      ${h.iia_rejected? '<span class="pill critical">Too simple</span>' : '<span class="pill good">Holds</span>'}
+      <span class="mono" style="font-size:12.5px;color:var(--text-secondary);">check statistic ${h.hausman_statistic}</span></div>`;
+  const p2 = htmlEl('p',null,c2); p2.style.cssText='font-size:12px;color:var(--text-secondary);';
+  p2.textContent = 'A one-size-fits-all buyer story is too simple here. People treat cameras that share a platform as closer substitutes, so the mockup uses buyer types and camera-type grouping instead.';
 
-  const c3 = card(g,'Nested-logit substitution (λ per nest)','λ→1 means alternatives in that nest behave like plain MNL; λ→0 means strong within-nest correlation (shared platform).');
+  const c3 = card(g,'How tightly camera types cluster','Closer to 1 = types behave like separate products. Closer to 0 = people treat them as a family.');
   const lam = D.discrete_choice.nested_logit.lambdas;
-  vBarChart(htmlEl('div',null,c3), Object.keys(lam).map(k=>({label:k.replace(' Mirrorless',''),values:[lam[k]]})), ['λ'],{h:190,max:1.05, valueFmt:v=>v.toFixed(2)});
+  vBarChart(htmlEl('div',null,c3), Object.keys(lam).map(k=>({label:k.replace(' Mirrorless',''),values:[lam[k]]})), ['Link'],{h:190,max:1.05, valueFmt:v=>v.toFixed(2)});
 
-  const c4 = card(g,'Latent-class segments (3-class MNL)','Class shares from EM; labels assigned by relative price/brand-equity coefficient rank (see caveat in Insight Constellation -- single EM run).');
+  const c4 = card(g,'Buyer types in this mockup','Shares from a single fit. Names come from whether price or brand weighs more — treat as directional.');
   const lc = D.discrete_choice.latent_class_mnl;
   const lcWrap = htmlEl('div',null,c4);
   lc.class_labels.forEach((lab,i)=>{
@@ -872,13 +882,13 @@ function renderChoice(panel){
     row.innerHTML = `<span>${lab}</span><span class="mono">${(lc.class_shares[i]*100).toFixed(0)}%</span>`;
   });
 
-  const c5 = card(g,'Cross-category substitution matrix','Row = category whose price rises 5%; column = share response. Derived from the estimated Nested Logit (not assumed).');
+  const c5 = card(g,'If this category’s price rises 5%','Row = the category that got more expensive; column = who picks up share. Mockup estimates.');
   c5.classList.add('card-span2');
   const cats3 = Object.keys(D.discrete_choice.nested_logit.lambdas);
   const matrix = cats3.map(rowCat => cats3.map(colCat => D.cross_elasticity_matrix[colCat][rowCat]));
   heatmapTable(htmlEl('div',null,c5), cats3, cats3, matrix);
 
-  const c6 = card(g,'Data-driven product clusters', `k=${D.segmentation.best_k} chosen by silhouette (best=${D.segmentation.silhouette_best.toFixed(2)}, moderate separation -- treat directionally).`);
+  const c6 = card(g,'Product groups in the catalog', `The mockup finds ${D.segmentation.best_k} groups. Separation is moderate — use as a sketch, not a hard cut.`);
   c6.classList.add('card-span2');
   const scatterPts = D.segmentation.cluster_profiles.map((cl,i)=>({
     x: cl.avg_price, y: cl.avg_ai_score, r: 6+Math.sqrt(cl.n_products)*2, color: seriesColor(i),
@@ -893,10 +903,10 @@ function renderChoice(panel){
 function renderPLC(panel){
   panel.innerHTML='';
   sectionHead(panel,'Product life cycle',
-    `Bass diffusion re-fit to observed monthly sales via nonlinear least squares. Fitted-stage recovery vs. the simulation's ground truth: ${(D.plc.stage_recovery_rate_vs_simulation*100).toFixed(0)}% of ${D.plc.n_products_fitted} products.`);
+    `Where products sit in their life: launch, growth, maturity, decline. ${Math.round(D.plc.stage_recovery_rate_vs_simulation*100)}% of ${D.plc.n_products_fitted} mockup products land in the expected stage.`);
   const g = grid(panel);
 
-  const c1 = card(g,'Life-cycle stage mix by category','Share of each category currently classified by fitted Bass diffusion fraction.');
+  const c1 = card(g,'Life-cycle mix by category','Share of each category currently in each stage.');
   c1.classList.add('card-span2');
   const stages=['pct_introduction','pct_growth','pct_maturity','pct_decline'];
   const stageColors=[cssVar('--s3'),cssVar('--s1'),cssVar('--s4'),cssVar('--s7')];
@@ -913,12 +923,12 @@ function renderPLC(panel){
   });
   renderLegend(c1,[{label:'Introduction',color:stageColors[0]},{label:'Growth',color:stageColors[1]},{label:'Maturity',color:stageColors[2]},{label:'Decline',color:stageColors[3]}]);
 
-  const c2 = card(g,'Diffusion speed by category','Bass q (imitation coefficient) -- higher = faster word-of-mouth-driven adoption once it takes off.');
-  vBarChart(htmlEl('div',null,c2), D.plc.category_summary.map(r=>({label:r.category.slice(0,14),values:[r.avg_q]})), ['avg. q'],{h:230, valueFmt:v=>v.toFixed(2)});
+  const c2 = card(g,'How fast word of mouth spreads','Higher = once a product takes off, it spreads faster by imitation.');
+  vBarChart(htmlEl('div',null,c2), D.plc.category_summary.map(r=>({label:r.category.slice(0,14),values:[r.avg_q]})), ['spread'],{h:230, valueFmt:v=>v.toFixed(2)});
 
   ['Introduction','Growth','Maturity','Decline'].forEach((stage,i)=>{
     const pb = D.plc.stage_playbook[stage];
-    const c = card(g, stage+' playbook', `Elasticity expectation: ${pb.elasticity_expectation}`);
+    const c = card(g, stage+' playbook', `Price sensitivity: ${pb.elasticity_expectation}`);
     c.innerHTML += `<div style="font-size:12.5px;line-height:1.6;"><b>Pricing —</b> ${pb.pricing}<br><b>How people find you —</b> ${pb.touchpoint}<br><b>Brand —</b> ${pb.brand}</div>`;
   });
 }
@@ -928,8 +938,8 @@ function renderPLC(panel){
    ========================================================= */
 function renderBrand(panel){
   panel.innerHTML='';
-  sectionHead(panel,'Brand equity & brand value',
-    `PCA-weighted Aaker-style equity index (PC1 explains ${(D.brand_equity.pc1_variance_explained*100).toFixed(0)}% of cross-brand variance) feeding an Interbrand-style $ brand-value model. Insulation correlation (strength vs. |elasticity|, reliable brands only): ${D.brand_equity.insulation_correlation!==null? D.brand_equity.insulation_correlation.toFixed(3):'n/a'} (${D.brand_equity.insulation_hypothesis_confirmed?'confirmed':'not confirmed at this sample size'}).`);
+  sectionHead(panel,'Brands and brand value',
+    `A strength score built from awareness, consideration, loyalty, quality, and related signals, feeding a modeled dollar value. Whether strength insulates a brand from price cuts: ${D.brand_equity.insulation_hypothesis_confirmed?'holds in this mockup':'not confirmed at this sample size'}.`);
 
   const ranked = D.brand_equity.brand_table.slice().sort((a,b)=>b.brand_value_usd_m-a.brand_value_usd_m);
   const strongest = D.brand_equity.brand_table.slice().sort((a,b)=>b.brand_strength_score_0_100-a.brand_strength_score_0_100)[0];
@@ -939,7 +949,7 @@ function renderBrand(panel){
     {lbl:'Modeled brand value', v:'$'+Math.round(totalVal).toLocaleString('en-US')+'M', s:`${ranked.length} brands in the index`},
     {lbl:'Value leader', v:ranked[0].brand, s:`$${Math.round(ranked[0].brand_value_usd_m)}M modeled`},
     {lbl:'Strongest brand', v:strongest.brand, s:`${strongest.brand_strength_score_0_100}/100 strength score`},
-    {lbl:'Price insulation', v:D.brand_equity.insulation_hypothesis_confirmed?'Holds':'Not confirmed', s:`r=${D.brand_equity.insulation_correlation!==null? D.brand_equity.insulation_correlation.toFixed(2):'n/a'} · n=${D.brand_equity.n_reliable_brand_elasticities} reliable`},
+    {lbl:'Price insulation', v:D.brand_equity.insulation_hypothesis_confirmed?'Holds':'Not confirmed', s:`n=${D.brand_equity.n_reliable_brand_elasticities} brands with a usable price-sensitivity estimate`},
   ].forEach(cell=>{
     const elc = htmlEl('div','cell',hero);
     htmlEl('div','lbl',elc).textContent = cell.lbl;
@@ -949,25 +959,25 @@ function renderBrand(panel){
 
   const g = grid(panel);
 
-  const c1 = card(g,'Brand strength vs. modeled brand value','Bubble size = trailing category revenue proxy. Hollow ring = elasticity estimate flagged unreliable (sample-size/plausibility gate).');
+  const c1 = card(g,'Brand strength vs. modeled brand value','Bubble size is a revenue proxy. Hollow ring = price-sensitivity estimate too thin to trust.');
   c1.classList.add('card-span2');
   const pts = D.brand_equity.brand_table.map((b,i)=>({
     x:b.brand_strength_score_0_100, y:b.brand_value_usd_m, r: b.elasticity_estimate_reliable? 8:6,
     color: seriesColor(i%8), label:b.brand,
-    tip:`${b.brand}<br>Strength ${b.brand_strength_score_0_100}/100 · Value $${Math.round(b.brand_value_usd_m)}M<br>Elasticity ${b.brand_price_elasticity} ${b.elasticity_estimate_reliable?'(reliable)':'(unreliable — excluded from insulation test)'}`,
+    tip:`${b.brand}<br>Strength ${b.brand_strength_score_0_100}/100 · Value $${Math.round(b.brand_value_usd_m)}M<br>Price sensitivity ${b.brand_price_elasticity} ${b.elasticity_estimate_reliable?'(usable)':'(too thin — left out of the insulation check)'}`,
     showLabel:true,
   }));
   scatterChart(htmlEl('div',null,c1), pts, {xLabel:'Brand strength score (0–100)', yLabel:'Modeled brand value ($M)', h:320});
 
-  const c2 = card(g,'Brand equity index composition','PCA-derived weights (not assumed equal) across 7 survey-style components.');
+  const c2 = card(g,'What goes into the strength score','Relative weight of each signal. Not assumed equal.');
   const weights = D.brand_equity.pca_weights;
-  vBarChart(htmlEl('div',null,c2), Object.keys(weights).map(k=>({label:k.replace('_pct','').replace('_1_10','').replace('_',' ').slice(0,14), values:[Math.abs(weights[k])]})), ['|weight|'],{h:220, valueFmt:v=>v.toFixed(2)});
+  vBarChart(htmlEl('div',null,c2), Object.keys(weights).map(k=>({label:k.replace('_pct','').replace('_1_10','').replace('_',' ').slice(0,14), values:[Math.abs(weights[k])]})), ['weight'],{h:220, valueFmt:v=>v.toFixed(2)});
 
   const c3 = card(g,'Full brand table');
   c3.classList.add('card-span2');
   const wrap = htmlEl('div','tbl-wrap',c3);
   const t = htmlEl('table','data',wrap);
-  t.innerHTML='<thead><tr><th>Brand</th><th>Strength</th><th>Elasticity</th><th>Reliable?</th><th>Value ($M)</th><th>Origin</th></tr></thead>';
+  t.innerHTML='<thead><tr><th>Brand</th><th>Strength</th><th>Price sensitivity</th><th>Usable?</th><th>Value ($M)</th><th>Origin</th></tr></thead>';
   const tb = htmlEl('tbody',null,t);
   D.brand_equity.brand_table.slice().sort((a,b)=>b.brand_value_usd_m-a.brand_value_usd_m).forEach(b=>{
     const tr = htmlEl('tr',null,tb);
@@ -1015,7 +1025,7 @@ function renderBrand(panel){
 function renderCompetitor(panel){
   panel.innerHTML='';
   sectionHead(panel,'Competitor intelligence',
-    'Positioning quadrant (innovation × brand strength) plus a present-day disruption-risk score blending smartphone substitution, tariff/supply-chain exposure, AR-wearable disruption, circular economy and regulatory/sustainability pressure.');
+    'Where brands sit on innovation vs strength, plus a present-day disruption-risk score (phones, tariffs, AR wearables, circular economy, regulation). Mockup scores.');
   const g = grid(panel);
 
   const c1 = card(g,'Positioning quadrant','Bubble size = present-day disruption-risk score.');
@@ -1029,7 +1039,7 @@ function renderCompetitor(panel){
   }));
   scatterChart(htmlEl('div',null,c1), pts, {xLabel:'Innovation index', yLabel:'Brand strength score', h:340, xMid:med_innov, yMid:med_brand});
 
-  const c2 = card(g,'Present-day disruption-risk ranking','30% smartphone substitution + 25% tariff/supply-chain + 20% AR disruption + 15% circular economy + 10% regulatory.');
+  const c2 = card(g,'Present-day disruption-risk ranking','Phones, tariffs, AR, circular economy, and regulation, blended. Mockup weights.');
   const items = D.competitor.competitor_matrix.slice().sort((a,b)=>b.overall_disruption_risk_score-a.overall_disruption_risk_score)
     .map((c)=>({label:c.brand, value:c.overall_disruption_risk_score, valueLabel:c.overall_disruption_risk_score.toFixed(2)}));
   hBarChart(htmlEl('div',null,c2), items, {labelW:130, rowH:20, ramp:true});
@@ -1062,7 +1072,7 @@ function renderTouchpoints(panel){
     htmlEl('div',null,block).innerHTML = `<b style="font-size:12.5px;">${stage}</b>`;
     rows.forEach(r=>{
       const row = htmlEl('div',null,block); row.style.cssText='display:flex;justify-content:space-between;font-size:12.5px;padding:4px 0;color:var(--text-secondary);';
-      row.innerHTML = `<span>${r.touchpoint}</span><span class="mono">ROI ${r.roi_index.toFixed(2)}</span>`;
+      row.innerHTML = `<span>${r.touchpoint}</span><span class="mono">return ${r.roi_index.toFixed(2)}</span>`;
     });
   });
 
@@ -1094,8 +1104,8 @@ function renderTouchpoints(panel){
    ========================================================= */
 function renderSimulator(panel){
   panel.innerHTML='';
-  sectionHead(panel,'What-if pricing simulator',
-    'Live constant-elasticity projection using the Negative-Binomial-corrected category elasticity and its standard error. Compact / DSLR / Full-Frame / APS-C baselines are CIPA trailing-12-month shipments and ASP; other categories stay synthetic. Move the slider; the band shows the ±1 SE range on the elasticity. The Nash marker is the Bertrand price point at the assumed cost share from Pricing & Elasticity.');
+  sectionHead(panel,'What-if pricing',
+    'Move the price and see units and revenue in this mockup. Compact / DSLR / Full-Frame / APS-C start from published last-12-month shipments; other categories stay synthetic. The band is a range of outcomes. The marker is the stable price if rivals stay put.');
 
   const controls = htmlEl('div','sim-controls',panel);
   const validCats = D.whatif_baseline.filter(c=>c.elasticity!==null && c.elasticity!==undefined);
@@ -1106,7 +1116,7 @@ function renderSimulator(panel){
   validCats.forEach(c=>{
     const o=document.createElement('option');
     o.value=c.category;
-    o.textContent = c.category + (c.source==='CIPA' ? ' · CIPA' : '');
+    o.textContent = c.category + (c.source==='CIPA' ? ' · industry shipments' : ' · mockup');
     sel.appendChild(o);
   });
 
@@ -1117,8 +1127,8 @@ function renderSimulator(panel){
   const sliderVal = htmlEl('span','slider-val mono',sliderRow); sliderVal.textContent='+0%';
 
   const f3 = htmlEl('div','sim-field',controls);
-  htmlEl('label',null,f3).textContent='Nash';
-  const snapBtn = htmlEl('button','theme-btn',f3); snapBtn.type='button'; snapBtn.textContent='Move to Nash';
+  htmlEl('label',null,f3).textContent='Stable price';
+  const snapBtn = htmlEl('button','theme-btn',f3); snapBtn.type='button'; snapBtn.textContent='Move to stable price';
 
   const nashNote = htmlEl('p',null,panel);
   nashNote.style.cssText='font-size:12.5px;color:var(--text-secondary);margin:0 0 14px;max-width:820px;';
@@ -1131,7 +1141,7 @@ function renderSimulator(panel){
     cells[l] = htmlEl('div','v mono',c);
   });
 
-  const chartCard = card(panel,'Volume response curve','Shaded band = ±1 elasticity-SE scenario range at each price point.');
+  const chartCard = card(panel,'Volume response curve','Shaded band = range of outcomes at each price point.');
   const chartDiv = htmlEl('div',null,chartCard);
 
   function update(){
@@ -1154,11 +1164,11 @@ function renderSimulator(panel){
     const nash = nashForCategory(cat.category, NASH_COST_RATIO);
     if(nash && nash.ok){
       const inRange = Math.abs(nash.gapPct)<=30;
-      const caveat = nash.inelastic ? ' Demand is inelastic — treat as a raise-price direction, not a dollar target.' : '';
-      nashNote.innerHTML = `Nash price <b>$${Math.round(nash.pNash).toLocaleString('en-US')}</b> (${nash.gapPct>=0?'+':''}${nash.gapPct.toFixed(0)}% vs today) at ${(NASH_COST_RATIO*100).toFixed(0)}% cost share.${caveat} ${inRange?'':'That point sits outside the ±30% slider — see Pricing &amp; Elasticity.'}`;
+      const caveat = nash.inelastic ? ' Demand is weakly sensitive — treat as a raise-price direction, not a dollar target.' : '';
+      nashNote.innerHTML = `Stable price <b>$${Math.round(nash.pNash).toLocaleString('en-US')}</b> (${nash.gapPct>=0?'+':''}${nash.gapPct.toFixed(0)}% vs today) at ${(NASH_COST_RATIO*100).toFixed(0)}% cost share.${caveat} ${inRange?'':'That point sits outside the ±30% slider — see Pricing.'}`;
       snapBtn.disabled = !inRange;
     } else {
-      nashNote.textContent = (nash && nash.reason) ? nash.reason : 'No Nash price for this category.';
+      nashNote.textContent = (nash && nash.reason) ? nash.reason : 'No stable price for this category.';
       snapBtn.disabled = true;
     }
 
@@ -1189,7 +1199,7 @@ function renderSimulator(panel){
     if(nash && nash.ok && Math.abs(nash.gapPct)<=30){
       const nX = xScale((nash.gapPct+30)/3);
       el('line',{x1:nX,x2:nX,y1:padT,y2:H-padB,stroke:cssVar('--s7'),'stroke-width':1.5,'stroke-dasharray':'4,3'},svg);
-      const nt=el('text',{x:nX+4,y:padT+12,'font-size':10,fill:cssVar('--s7')},svg); nt.textContent='Nash';
+      const nt=el('text',{x:nX+4,y:padT+12,'font-size':10,fill:cssVar('--s7')},svg); nt.textContent='Stable';
     }
     [0,6,12].forEach(i=>{ const t=el('text',{x:xScale(i),y:H-8,'text-anchor':'middle',class:'axis-label'},svg); t.textContent=xs[i]; });
     chartDiv.appendChild(svg);
@@ -1206,10 +1216,10 @@ function renderSimulator(panel){
   update();
   RERENDER_ON_SHOW['simulator'] = update;
 
-  const c2 = card(panel,'Pre-built scenario library (Monte Carlo, 4,000 draws)','P10/P50/P90 revenue outcomes incorporating both elasticity-estimation uncertainty and residual demand noise.');
+  const c2 = card(panel,'Saved scenarios (range of outcomes)','Low / mid / high revenue if you ran the mockup many times.');
   const wrap = htmlEl('div','tbl-wrap',c2);
   const t = htmlEl('table','data',wrap);
-  t.innerHTML='<thead><tr><th>Scenario</th><th>Δ Price</th><th>Rev. P10</th><th>Rev. P50</th><th>Rev. P90</th><th>P(revenue↑)</th></tr></thead>';
+  t.innerHTML='<thead><tr><th>Scenario</th><th>Price change</th><th>Low</th><th>Mid</th><th>High</th><th>Chance revenue rises</th></tr></thead>';
   const tb = htmlEl('tbody',null,t);
   D.simulation.scenario_library.forEach(s=>{
     const tr = htmlEl('tr',null,tb);
@@ -1224,17 +1234,17 @@ function renderSimulator(panel){
    ========================================================= */
 function renderInsights(panel){
   panel.innerHTML='';
-  sectionHead(panel,'Insight constellation',
-    'Every insight carries a Type-1/Interval-Type-2 fuzzy confidence band (Mamdani inference on statistical confidence × business impact) and a fuzzy-TOPSIS closeness coefficient across 5 criteria -- ranking multiple decisions at once rather than one metric at a time.');
+  sectionHead(panel,'Priorities',
+    'Every action is ranked by impact, fit, and risk in this mockup. Treat the order as a discussion list, not a live recommendation.');
 
-  const c1 = card(panel,'Ranked constellation','Bar = mid-point closeness coefficient; tick = interval type-2 band [lower, upper].');
+  const c1 = card(panel,'Ranked actions','Bar = priority score; ticks = a range around that score.');
   const ranked = D.fuzzy_prioritization.insights.slice().sort((a,b)=>a.overall_rank-b.overall_rank);
   ranked.forEach(ins=>{
     const row = htmlEl('div','insight-row',c1);
     htmlEl('div','rank-badge',row).textContent='#'+ins.overall_rank;
     const mid = htmlEl('div',null,row);
-    htmlEl('div','insight-title',mid).textContent = ins.title;
-    htmlEl('div','insight-meta',mid).textContent = ins.recommended_action;
+    htmlEl('div','insight-title',mid).textContent = plainCopy(ins.title);
+    htmlEl('div','insight-meta',mid).textContent = plainCopy(ins.recommended_action);
     const trackWrap = htmlEl('div',null,row);
     const track = htmlEl('div','cc-bar-track',trackWrap);
     const fill = htmlEl('div','cc-bar-fill',track); fill.style.width = (ins.topsis_closeness_mid*100)+'%';
@@ -1246,7 +1256,7 @@ function renderInsights(panel){
   });
 
   const g2 = grid(panel);
-  const c2 = card(g2,'Fuzzy priority label mix (Type-1/2 Mamdani output)');
+  const c2 = card(g2,'Priority mix');
   const labels = ['Critical','High','Medium','Low'];
   const counts = labels.map(l=>ranked.filter(r=>r.fuzzy_priority_label===l).length);
   vBarChart(htmlEl('div',null,c2), labels.map((l,i)=>({
@@ -1254,19 +1264,28 @@ function renderInsights(panel){
     color: l==='Critical' ? cssVar('--critical') : l==='High' ? cssVar('--warning') : l==='Medium' ? cssVar('--s1') : cssVar('--s3'),
   })), ['Insights'],{h:200,max:Math.max(...counts)*1.3, valueFmt:v=>Math.round(v).toString()});
 
-  const c3 = card(g2,'TOPSIS criteria weights','Chen (2000) normalized fuzzy TOPSIS; weights are analyst-assigned and documented (not fit to the data).');
+  const c3 = card(g2,'What the ranking weights','How much this mockup cares about impact, fit, cost, and risk. Set by the analyst, not fit to the data.');
   const w = D.fuzzy_prioritization.weights;
-  vBarChart(htmlEl('div',null,c3), Object.keys(w).map(k=>({label:k.replace(/_/g,' ').slice(0,16), values:[w[k]]})), ['weight'],{h:200,max:0.4, valueFmt:v=>v.toFixed(2)});
+  vBarChart(htmlEl('div',null,c3), Object.keys(w).map(k=>({label:k.replace(/_/g,' ').replace('business impact','Impact').replace('strategic fit present day','Fit').replace('fuzzy priority','Priority').replace('implementation cost','Cost').slice(0,16), values:[w[k]]})), ['weight'],{h:200,max:0.4, valueFmt:v=>v.toFixed(2)});
 
-  const c4 = card(panel,'Quality check matrix','7 checks per insight -- Pass / Warn / Fail. This is the audit trail behind every confidence score above.');
+  const c4 = card(panel,'Quality checks','Seven checks per action — Pass / Caution / Fail. Read this before acting on any single number.');
   const wrap = htmlEl('div','tbl-wrap',c4);
   const t = htmlEl('table','data',wrap);
   const checkCols = ['statistical_significance','sample_size_adequacy','overdispersion_handled','cross_model_robustness','business_plausibility','data_recency','estimation_stability'];
-  t.innerHTML = `<thead><tr><th>ID</th><th>Insight</th>${checkCols.map(c=>`<th>${c.replace(/_/g,' ')}</th>`).join('')}<th>Overall</th></tr></thead>`;
+  const checkHeads = {
+    statistical_significance:'Significant?',
+    sample_size_adequacy:'Enough data?',
+    overdispersion_handled:'Noise handled?',
+    cross_model_robustness:'Holds up?',
+    business_plausibility:'Plausible?',
+    data_recency:'Fresh?',
+    estimation_stability:'Stable?',
+  };
+  t.innerHTML = `<thead><tr><th>ID</th><th>Action</th>${checkCols.map(c=>`<th>${checkHeads[c]}</th>`).join('')}<th>Overall</th></tr></thead>`;
   const tb = htmlEl('tbody',null,t);
   D.quality_check_matrix.forEach(r=>{
     const tr = htmlEl('tr',null,tb);
-    tr.innerHTML = `<td class="mono">${r.id}</td><td style="white-space:normal;max-width:260px;">${r.title}</td>` +
+    tr.innerHTML = `<td class="mono">${r.id}</td><td style="white-space:normal;max-width:260px;">${plainCopy(r.title)}</td>` +
       checkCols.map(c=> `<td>${r[c]==='N/A'?'—':statusPill(r[c])}</td>`).join('') +
       `<td>${statusPill(r.overall_qc)}</td>`;
   });
